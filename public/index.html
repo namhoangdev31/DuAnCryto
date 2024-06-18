@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Chat - Two Users</title>
+    <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: space-around;
+            padding: 20px;
+        }
+        .chat-box {
+            width: 45%;
+            height: 300px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: scroll;
+        }
+        .message-input {
+            width: calc(100% - 20px);
+            margin-top: 10px;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+        .send-button {
+            margin-top: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-box" id="user1-chat">
+        <h3>User 1</h3>
+        <div id="user1-conversation"></div>
+        
+        <input type="text" id="user1-message" class="message-input" placeholder="Type your message">
+        <button id="user1-send" class="send-button">Send</button>
+    </div>
+
+    <div class="chat-box" id="user2-chat">
+        <h3>User 2</h3>
+        <div id="user2-conversation"></div>
+        <input type="text" id="user2-message" class="message-input" placeholder="Type your message">
+        <button id="user2-send" class="send-button">Send</button>
+    </div>
+
+    <script>
+        // Connect to Socket.IO server
+        const socket = io('http://localhost:5001');
+
+        // Function to append message to conversation
+        function appendMessage(username, message, conversationDiv) {
+            $(conversationDiv).append(`<p><b>${username}:</b> ${message}</p>`);
+            // Scroll to bottom of conversation
+            $(conversationDiv).scrollTop($(conversationDiv)[0].scrollHeight);
+        }
+
+        // User 1 send message
+        $('#user1-send').click(function () {
+            const message = $('#user1-message').val().trim();
+            if (message !== '') {
+                socket.emit('sendchat', 'User 1', message); // Emit with username
+                $('#user1-message').val('');
+                appendMessage('User 1', message, '#user2-conversation');
+            }
+        });
+
+        // User 2 send message
+        $('#user2-send').click(function () {
+            const message = $('#user2-message').val().trim();
+            if (message !== '') {
+                socket.emit('sendchat', 'User 2', message); // Emit with username
+                $('#user2-message').val('');
+                appendMessage('User 2', message, '#user1-conversation');
+            }
+        });
+
+        // Listen for incoming messages from server
+        socket.on('updatechat', function (username, data) {
+            if (username === 'User 1') {
+                appendMessage('User 2', data, '#user2-conversation');
+            } else if (username === 'User 2') {
+                appendMessage('User 1', data, '#user1-conversation');
+            }
+        });
+    </script>
+</body>
+</html>
